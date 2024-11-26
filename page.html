@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image to ASCII Converter with Color</title>
+  <style>
+    body {
+      font-family: monospace;
+      text-align: center;
+      background-color: #000;
+      color: #fff;
+    }
+    canvas {
+      display: none;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 6px; /* Ajusta este valor según sea necesario */
+      font-size: 6px; /* Ajusta este valor según sea necesario */
+    }
+  </style>
+</head>
+<body>
+  <h1>Image to ASCII Converter with Color</h1>
+  <input type="file" id="imageInput" accept="image/*">
+  <canvas id="canvas"></canvas>
+  <pre id="asciiOutput"></pre>
+
+  <script>
+    const ASCII_CHARS = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@']; // Más caracteres para mayor detalle
+
+    document.getElementById("imageInput").addEventListener("change", handleImage);
+
+    function handleImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = () => convertToASCII(img);
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function convertToASCII(image) {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Aumentamos la resolución para mayor detalle
+      const newWidth = 200; // Ajusta este valor para cambiar la resolución
+      const aspectRatio = image.height / image.width;
+      const characterAspectRatio = 0.5; // Ajusta según sea necesario
+      const newHeight = Math.round(newWidth * aspectRatio * characterAspectRatio);
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+      // Obtiene los píxeles de la imagen
+      const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+      const pixels = imageData.data;
+
+      let asciiArt = "";
+      for (let y = 0; y < newHeight; y++) {
+        for (let x = 0; x < newWidth; x++) {
+          const offset = (y * newWidth + x) * 4; // RGBA
+          const r = pixels[offset];
+          const g = pixels[offset + 1];
+          const b = pixels[offset + 2];
+
+          // Convierte a escala de grises
+          const brightness = (r + g + b) / 3;
+
+          // Mapea el brillo al carácter ASCII correspondiente
+          const charIndex = Math.floor((brightness / 255) * (ASCII_CHARS.length - 1));
+          const asciiChar = ASCII_CHARS[charIndex];
+
+          // Añade el carácter con estilo de color
+          asciiArt += `<span style="color: rgb(${r},${g},${b});">${asciiChar}</span>`;
+        }
+        asciiArt += "<br>"; // Nueva línea al final de cada fila
+      }
+
+      // Muestra el arte ASCII con colores
+      document.getElementById("asciiOutput").innerHTML = asciiArt;
+    }
+  </script>
+</body>
+</html>

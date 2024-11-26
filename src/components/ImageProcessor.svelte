@@ -1,59 +1,101 @@
 <script>
-  const ASCII_CHARS = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
+    // Conjunto ampliado de caracteres ASCII ordenados por densidad
+    const ASCII_CHARS = [' ', '.', ',', ':', ';', '+', '*', '?', '%', 'S', '#', '@'];
 
-  export let file;
-  export let onAsciiGenerated; // Recibirás esta función del componente padre
+    export let file;
+    export let onAsciiGenerated; // Callback para el resultado
 
-  $: if (file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-          const img = new Image();
-          img.onload = () => convertToASCII(img);
-          img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-  }
+    $: if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = () => convertToASCII(img);
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
-  function convertToASCII(image) {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    function convertToASCII(image) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-      // Ajusta la resolución
-      const newWidth = 200;
-      const aspectRatio = image.height / image.width;
-      const characterAspectRatio = 0.5;
-      const newHeight = Math.round(newWidth * aspectRatio * characterAspectRatio);
+        // Obtener la relación de aspecto de la imagen
+        const imageAspectRatio = image.width / image.height;
 
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      ctx.drawImage(image, 0, 0, newWidth, newHeight);
+        // Obtener la relación de aspecto de los caracteres
+        const charAspectRatio = getCharAspectRatio();
 
-      const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-      const pixels = imageData.data;
+        // Calcular la relación de aspecto efectiva
+        const effectiveAspectRatio = imageAspectRatio / charAspectRatio;
 
-      let asciiArt = "";
-      for (let y = 0; y < newHeight; y++) {
-          for (let x = 0; x < newWidth; x++) {
-              const offset = (y * newWidth + x) * 4; // RGBA
-              const r = pixels[offset];
-              const g = pixels[offset + 1];
-              const b = pixels[offset + 2];
+        // Definir el tamaño máximo en caracteres (aumentado para mayor definición)
+        const maxWidth = 300; // Antes era 200
+        const maxHeight = 300; // Antes era 200
 
-              // Escala de grises
-              const brightness = (r + g + b) / 3;
+        let newWidth, newHeight;
 
-              // Carácter ASCII correspondiente
-              const charIndex = Math.floor((brightness / 255) * (ASCII_CHARS.length - 1));
-              const asciiChar = ASCII_CHARS[charIndex];
+        if (effectiveAspectRatio >= 1) {
+            // Imagen es más ancha que alta
+            newWidth = maxWidth;
+            newHeight = Math.round(newWidth / effectiveAspectRatio);
+        } else {
+            // Imagen es más alta que ancha
+            newHeight = maxHeight;
+            newWidth = Math.round(newHeight * effectiveAspectRatio);
+        }
 
-              asciiArt += `<span style="color: rgb(${r},${g},${b});">${asciiChar}</span>`;
-          }
-          asciiArt += "<br>";
-      }
+        canvas.width = newWidth;
+        canvas.height = newHeight;
 
-      // Usa la función callback para enviar el arte generado
-      if (onAsciiGenerated) {
-          onAsciiGenerated(asciiArt);
-      }
-  }
+        // Dibujar la imagen ajustada en el canvas
+        ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+        const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+        const pixels = imageData.data;
+
+        let asciiArt = "";
+        for (let y = 0; y < newHeight; y++) {
+            for (let x = 0; x < newWidth; x++) {
+                const offset = (y * newWidth + x) * 4; // RGBA
+                const r = pixels[offset];
+                const g = pixels[offset + 1];
+                const b = pixels[offset + 2];
+
+                // Convertir a escala de grises usando luminancia relativa
+                const brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // Carácter ASCII correspondiente
+                const charIndex = Math.floor((brightness / 255) * (ASCII_CHARS.length - 1));
+
+                const asciiChar = ASCII_CHARS[charIndex];
+
+                // Añade el carácter con color RGB
+                asciiArt += `<span style="color: rgb(${r}, ${g}, ${b});">${asciiChar}</span>`;
+            }
+            asciiArt += "<br>";
+        }
+
+        // Llamada al callback para devolver el arte generado
+        if (onAsciiGenerated) {
+            onAsciiGenerated(asciiArt);
+        }
+    }
+
+    function getCharAspectRatio() {
+        // Crear un elemento temporal para medir la relación ancho/alto de la fuente
+        const span = document.createElement("span");
+        span.style.fontFamily = "Courier New, monospace"; // Asegurar fuente monoespaciada
+        span.style.fontSize = "16px";
+        span.style.visibility = "hidden";
+        span.textContent = "M"; // Carácter alto típico
+        document.body.appendChild(span);
+
+        const charWidth = span.offsetWidth;
+        const charHeight = span.offsetHeight;
+
+        document.body.removeChild(span);
+
+        // Relación ancho:alto
+        return charWidth / charHeight;
+    }
 </script>

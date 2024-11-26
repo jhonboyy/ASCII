@@ -74,5 +74,9 @@ export default {
 	],
 	watch: {
 		clearScreen: false
-	}
+	},
+	onwarn: (warning, warn) => {
+		if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+		warn(warning);
+	},
 };

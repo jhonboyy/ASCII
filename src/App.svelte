@@ -1,30 +1,34 @@
 <script>
-	export let name;
-</script>
-
-<main>
-	<h1>Hello {name}!</h1>
-	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
-</main>
-
-<style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
+	import FileInput from "./components/FileInput.svelte";
+	import AsciiPreview from "./components/AsciiPreview.svelte";
+	import ImageProcessor from "./components/ImageProcessor.svelte";
+  
+	let selectedFile = null;
+	let asciiArt = "";
+  
+	function handleFileSelected(file) {
+	  selectedFile = file;
 	}
-
+  
+	function handleAsciiGenerated(event) {
+	  asciiArt = event.detail;
+	}
+  </script>
+  
+  <h1>Image to ASCII Converter with Color</h1>
+  <FileInput onFileSelected={handleFileSelected} />
+  <ImageProcessor file={selectedFile} on:asciiGenerated={handleAsciiGenerated} />
+  <AsciiPreview {asciiArt} />
+  
+  <style>
 	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
+	  color: white;
+	  text-align: center;
 	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
+	body {
+	  font-family: monospace;
+	  text-align: center;
+	  background-color: #000;
+	  color: #fff;
 	}
-</style>
+  </style>

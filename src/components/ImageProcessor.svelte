@@ -1,9 +1,5 @@
 <script>
-    import { createEventDispatcher } from "svelte";
-  
     const ASCII_CHARS = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
-    const dispatch = createEventDispatcher();
-  
     export let file;
   
     $: if (file) {
